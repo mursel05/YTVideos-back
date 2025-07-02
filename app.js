@@ -74,9 +74,10 @@ app.post("/download-video", async (req, res) => {
     exec(command, () => {
       res.status(200).json({
         success: true,
-        file: `${protocol}://${host}/download/${safeTitle}.${
+        url: `${protocol}://${host}/download/${safeTitle}.${
           audioOnly ? "mp3" : "mp4"
         }`,
+        title: safeTitle,
       });
     });
   } catch (error) {
