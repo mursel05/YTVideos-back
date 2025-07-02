@@ -1,9 +1,15 @@
 const express = require("express");
 const { exec } = require("child_process");
 const path = require("path");
+const fs = require("fs");
 
 const app = express();
 app.use(express.json());
+
+const downloadDir = path.join(__dirname, "download");
+if (!fs.existsSync(downloadDir)) {
+  fs.mkdirSync(downloadDir, { recursive: true });
+}
 
 function formatVideoTitle(title) {
   let safeTitle = title.replace(/[\\\/:*?"<>|]/g, "");
@@ -13,10 +19,13 @@ function formatVideoTitle(title) {
 
 function getTitle(url) {
   return new Promise((resolve, reject) => {
-    exec(`yt-dlp --print "%(title)s" "${url}"`, (error, stdout) => {
+    const cookiesFile = path.join(__dirname, "cookies.txt");
+    let command = `yt-dlp --cookies "${cookiesFile}" --print "%(title)s" "${url}"`;
+
+    exec(command, (error, stdout) => {
       if (error) {
-        console.error("Error fetching title:", error.message);
-        return reject(null);
+        console.error("Error fetching title:", error);
+        return reject(error);
       }
       resolve(stdout.trim());
     });
@@ -39,39 +48,46 @@ app.post("/download-video", async (req, res) => {
         .json({ success: false, message: "Video URL is required" });
     }
 
-    const rawTitle = await getTitle(videoUrl);
-    if (!rawTitle) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Failed to retrieve video title" });
+    let rawTitle;
+    try {
+      rawTitle = await getTitle(videoUrl);
+    } catch (error) {
+      return res.status(400).json({
+        success: false,
+        message: "Failed to retrieve video title",
+      });
     }
 
     const safeTitle = formatVideoTitle(rawTitle);
     const outputPath = `download/${safeTitle}.${audioOnly ? "mp3" : "mp4"}`;
+    const cookiesFile = path.join(__dirname, "cookies.txt");
 
     let command = "";
 
     if (audioOnly) {
-      command = `yt-dlp -o "download/${safeTitle}.%(ext)s" -x --audio-format mp3 --audio-quality 0 "${videoUrl}"`;
+      command = `yt-dlp --cookies "${cookiesFile}" -o "download/${safeTitle}.%(ext)s" -x --audio-format mp3 --audio-quality 0 "${videoUrl}"`;
     } else {
       const formatSelector = `bestvideo[height<=${videoQuality}][ext=mp4]+bestaudio[ext=m4a]/best[height<=${videoQuality}]/best`;
-      command = `yt-dlp -o "${outputPath}" -f "${formatSelector}" "${videoUrl}"`;
+      command = `yt-dlp --cookies "${cookiesFile}" -o "${outputPath}" -f "${formatSelector}" "${videoUrl}"`;
     }
 
     exec(command, () => {
       res.status(200).json({
         success: true,
-        message: "Download started",
         file: `${protocol}://${host}/download/${safeTitle}.${
           audioOnly ? "mp3" : "mp4"
         }`,
       });
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Server error" });
+    console.error("Server error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
   }
 });
 
-app.listen(5000, () => {
-  console.log("Server running on http://localhost:5000");
+app.listen(process.env.PORT || 5000, () => {
+  console.log(`Server running on port ${process.env.PORT || 5000}`);
 });
