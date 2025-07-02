@@ -12,8 +12,27 @@ if (!fs.existsSync(downloadDir)) {
 }
 
 function formatVideoTitle(title) {
-  let safeTitle = title.replace(/[\\\/:*?"<>|]/g, "");
-  safeTitle = safeTitle.replace(/ /g, "-");
+  let safeTitle = title
+    .replace(
+      /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu,
+      ""
+    )
+    .replace(/[^\u0000-\u007F]/g, "")
+    .replace(/[\\\/:*?"<>|]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/ /g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  if (!safeTitle || safeTitle.length === 0) {
+    safeTitle = "video-" + Date.now();
+  }
+
+  if (safeTitle.length > 100) {
+    safeTitle = safeTitle.substring(0, 100);
+  }
+
   return safeTitle;
 }
 
