@@ -58,7 +58,6 @@ app.post("/download-video", async (req, res) => {
     const videoUrl = req.body.url;
     const videoQuality = req.body.quality || "1080";
     const audioOnly = req.body.audio || false;
-    const protocol = req.protocol;
     const host = req.get("host");
 
     if (!videoUrl) {
@@ -94,7 +93,7 @@ app.post("/download-video", async (req, res) => {
       res.status(200).json({
         success: true,
         data: {
-          url: `${protocol}://${host}/download/${safeTitle}.${
+          url: `https://${host}/download/${safeTitle}.${
             audioOnly ? "mp3" : "mp4"
           }`,
           name: safeTitle,
