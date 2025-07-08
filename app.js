@@ -163,6 +163,7 @@ app.post("/download-video", async (req, res) => {
           url: `https://${host}/download/${videoTitle}.${
             audioOnly ? "mp3" : "mp4"
           }`,
+          audio: audioOnly,
           name: videoTitle,
         },
       });
