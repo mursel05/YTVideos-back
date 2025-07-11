@@ -2,7 +2,9 @@ const express = require("express");
 const { exec } = require("child_process");
 const path = require("path");
 const fs = require("fs");
+const dotenv = require("dotenv");
 
+dotenv.config();
 const app = express();
 app.use(express.json());
 
@@ -39,7 +41,7 @@ function formatVideoTitle(title) {
 function getTitle(url) {
   return new Promise((resolve, reject) => {
     const cookiesFile = path.join(__dirname, "cookies.txt");
-    let command = `yt-dlp --cookies "${cookiesFile}" --print "%(title)s" "${url}"`;
+    let command = `yt-dlp --cookies "${cookiesFile}" --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" --print "%(title)s" "${url}"`;
 
     exec(command, (error, stdout) => {
       if (error) {
@@ -150,10 +152,10 @@ app.post("/download-video", async (req, res) => {
     let command = "";
 
     if (audioOnly) {
-      command = `yt-dlp --cookies "${cookiesFile}" -o "download/${videoTitle}.%(ext)s" -x --audio-format mp3 --audio-quality 0 "${videoUrl}"`;
+      command = `yt-dlp --cookies "${cookiesFile}" --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" -o "download/${videoTitle}.%(ext)s" -x --audio-format mp3 --audio-quality 0 "${videoUrl}"`;
     } else {
       const formatSelector = `bestvideo[height<=${videoQuality}][ext=mp4]+bestaudio[ext=m4a]/best[height<=${videoQuality}]/best`;
-      command = `yt-dlp --cookies "${cookiesFile}" -o "${outputPath}" -f "${formatSelector}" "${videoUrl}"`;
+      command = `yt-dlp --cookies "${cookiesFile}" --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" -o "${outputPath}" -f "${formatSelector}" "${videoUrl}"`;
     }
 
     exec(command, () => {
@@ -177,6 +179,6 @@ app.post("/download-video", async (req, res) => {
   }
 });
 
-app.listen(process.env.PORT || 5000, () => {
-  console.log(`Server running on port ${process.env.PORT || 5000}`);
+app.listen(process.env.PORT, () => {
+  console.log(`Server running on port ${process.env.PORT}`);
 });
